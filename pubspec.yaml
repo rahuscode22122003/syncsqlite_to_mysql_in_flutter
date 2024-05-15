@@ -43,6 +43,8 @@ dependencies:
   data_connection_checker_nulls: ^0.0.2
 
 dev_dependencies:
+  integration_test:
+    sdk: flutter
   flutter_test:
     sdk: flutter
 

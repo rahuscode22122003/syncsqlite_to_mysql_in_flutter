@@ -4,46 +4,50 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class SqfliteDatabaseHelper {
-  SqfliteDatabaseHelper.internal();
-  static final SqfliteDatabaseHelper instance = new SqfliteDatabaseHelper.internal();
+  SqfliteDatabaseHelper._internal(); // Changed constructor to private
+  static final SqfliteDatabaseHelper instance = SqfliteDatabaseHelper._internal(); // Singleton pattern
   factory SqfliteDatabaseHelper() => instance;
 
-  static final contactinfoTable = 'contactinfoTable';
-  static final _version = 1;
+  static const contactinfoTable = 'contactinfoTable';
+  static const _version = 2; // Increment the version to trigger upgrade
 
-  static Database? _db; // Changed to nullable to allow null initialization
+  static Database? _db; // Nullable to allow null initialization
 
   Future<Database> get db async {
-    if (_db!= null) {
+    if (_db != null) {
       return _db!;
     }
-    _db = await initDb();
+    _db = await _initDb();
     return _db!;
   }
 
-  Future<Database> initDb() async {
+  Future<Database> _initDb() async {
     Directory directory = await getApplicationDocumentsDirectory();
-    String dbPath = join(directory.path,'syncdatabase.db');
+    String dbPath = join(directory.path, 'syncdatabase.db');
     print(dbPath);
-    var openDb = await openDatabase(dbPath, version: _version,
-        onCreate: (Database db, int version) async {
-          await db.execute("""
-          CREATE TABLE $contactinfoTable (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            userId INTEGER NOT NULL, 
-            name TEXT, 
-            email TEXT, 
-            gender TEXT, 
-            createdAt TEXT
-          )"""); // Ensure the createdAt column is included here
-        },
-        onUpgrade: (Database db, int oldversion, int newversion) async {
-          if (oldversion < newversion) {
-            print("Version Upgrade");
-          }
-        });
-    print('db initialize');
+
+    var openDb = await openDatabase(
+      dbPath,
+      version: 2, // Increment version to ensure onUpgrade is called
+      onCreate: (Database db, int version) async {
+        await db.execute("""
+        CREATE TABLE $contactinfoTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          userId INTEGER NOT NULL,
+          name TEXT,
+          email TEXT,
+          gender TEXT,
+          createdAt TEXT
+        )
+      """);
+      },
+      onUpgrade: (Database db, int oldVersion, int newVersion) async {
+        if (oldVersion < newVersion) {
+          await db.execute("ALTER TABLE $contactinfoTable ADD COLUMN userId INTEGER NOT NULL DEFAULT 0");
+        }
+      },
+    );
+    print('db initialized');
     return openDb;
   }
-
 }

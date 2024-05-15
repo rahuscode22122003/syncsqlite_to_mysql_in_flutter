@@ -40,35 +40,42 @@ class SyncronizationData {
   }
 
   Future<void> saveToMysqlWith(List<ContactinfoModel> contactList) async {
-    for (var i = 0; i < contactList.length; i++) {
-      Map<String, dynamic> data = {
-        "contact_id": contactList[i].id.toString(),
-        "name": contactList[i].name,
-        "email": contactList[i].email,
-        "gender": contactList[i].gender,
-        "created_at": contactList[i].createdAt,
-      };
-      try {
-        final response = await http.post(Uri.parse('http://192.168.1.19/syncmysqltosqflite/load_from_sqflite_contactinfo_table_save_or_update_to_mysql.php'), body: data);
-        if (response.statusCode == 200) {
-          print("Saving Data ");
-        } else {
-          print("Failed to save data: ${response.statusCode}");
+    if (await isInternet()) {
+      for (var i = 0; i < contactList.length; i++) {
+        Map<String, dynamic> data = {
+          "userId": contactList[i].userId.toString(), // Corrected parameter name
+          "contact_id": contactList[i].id.toString(),
+          "name": contactList[i].name,
+          "email": contactList[i].email,
+          "gender": contactList[i].gender,
+          "createdAt": contactList[i].createdAt,
+        };
+        try {
+          final response = await http.post(Uri.parse('http://192.168.1.19/syncmysqltosqflite/load_from_sqflite_contactinfo_table_save_or_update_to_mysql.php'), body: data);
+          if (response.statusCode == 200) {
+            print("Saving Data ");
+          } else {
+            print("Failed to save data: ${response.statusCode}");
+          }
+        } catch (e) {
+          print("Error saving data: $e");
         }
-      } catch (e) {
-        print("Error saving data: $e");
       }
+    } else {
+      print("No internet connection. Cannot sync data to server.");
     }
   }
+
 
   Future<void> saveToMysql(List<Map<String, dynamic>> contactList) async {
     for (var i = 0; i < contactList.length; i++) {
       Map<String, dynamic> data = {
+        "userId": contactList[i]['userId'].toString(), // Corrected parameter name
         "contact_id": contactList[i]['id'].toString(),
         "name": contactList[i]['name'],
         "email": contactList[i]['email'],
         "gender": contactList[i]['gender'],
-        "created_at": contactList[i]['createdAt'],
+        "createdAt": contactList[i]['createdAt'],
       };
       try {
         final response = await http.post(Uri.parse('http://192.168.1.19/syncmysqltosqflite/load_from_sqflite_contactinfo_table_save_or_update_to_mysql.php'), body: data);
